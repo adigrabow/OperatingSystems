@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
 	char inBuffer[1];
 	char keyBuffer[1];
 	DIR* inDirectory; //input directory stream
-	DIR* outDirectory; //input directory stream
-	struct dirent* directoryEntry; //a directory is consists by directory entries. (this is the type readdear() returns)
+	DIR* outDirectory; //output directory stream
+	struct dirent* directoryEntry; //this is the type readdear() returns
 	int keyFileDescriptor; //a pointer to the key file
 
 	char* inputDirectoryPath = argv[1];
@@ -67,12 +67,11 @@ int main(int argc, char** argv) {
 	}
 
 	/****************************************************************
-	 * inDirectory loop - go through all the files in the inDirectory
+	 * inDirectory loop - go through all the files of inDirectory
 	 * **************************************************************/
 	while ( (directoryEntry = readdir(inDirectory)) != NULL) {
 
 		/*make sure we are not reading a directory*/
-
 		if ((strcmp(directoryEntry->d_name, DIRECTORY) == 0) || (strcmp(directoryEntry->d_name, PARENTDIR) == 0) ) {
 			continue;
 		}
@@ -82,7 +81,7 @@ int main(int argc, char** argv) {
 		/*open key file*/
 		keyFileDescriptor = open(keyFilePath, O_RDONLY);
 		if( keyFileDescriptor < 0 ) {
-			printf( "Error opening file: %s\n", keyFilePath);
+			printf( "Error1 opening file: %s\n", keyFilePath);
 			closedir(inDirectory);
 			closedir(outDirectory);
 			return 2;//TODO add appropriate error msg
@@ -103,16 +102,16 @@ int main(int argc, char** argv) {
 		/* open input and output files*/
 		inFileDescriptor = open(inFilePath, O_RDONLY);
 		if (inFileDescriptor < 0) {
-			printf( "Error opening file: %s\n",directoryEntry->d_name) ;
+			printf( "Error2 opening file: %s\n",directoryEntry->d_name) ;
 			close(keyFileDescriptor);
 			closedir(inDirectory);
 			closedir(outDirectory);
 			return -1;
 		}
-
-		outFileDescriptor = open(outFilePath, O_WRONLY | O_CREAT, 0644);
+///Users/adigrabow/Documents/eclipse_c/workspace/Test2/inputDir/
+		outFileDescriptor = open(outFilePath, O_WRONLY | O_CREAT| O_TRUNC, 0777);
 		if (outFileDescriptor < 0) {
-			printf( "Error opening file: %s\n",directoryEntry->d_name) ;
+			printf( "Error3 opening file: %s\n",directoryEntry->d_name) ;
 			close(inFileDescriptor);
 			close(keyFileDescriptor);
 			closedir(inDirectory);
@@ -129,9 +128,10 @@ int main(int argc, char** argv) {
 
 			/*if we reached the end of key file before we finished input file, re-open key file*/
 			if (numOfKeyBytesRead == 0) {
+				close(keyFileDescriptor);
 				keyFileDescriptor = open(keyFilePath, O_RDONLY);
 				if( keyFileDescriptor < 0 ) {
-					printf( "Error opening file: %s\n", inputDirectoryPath);
+					printf( "Error4 opening file: %s\n", keyFilePath);
 					close(inFileDescriptor);
 					closedir(inDirectory);
 					closedir(outDirectory);
@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
 			xor[0] = inBuffer[0] ^ keyBuffer[0];
 			numOfBytesWrite = write (outFileDescriptor, xor, (ssize_t) numOfFileBytesRead);
 			if(numOfBytesWrite != numOfFileBytesRead){
-				perror("write"); //TODO add appropriate error msg
+				perror("5"); //TODO add appropriate error msg
 				return 4;
 			}
 
