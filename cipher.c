@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 	char* keyFilePath = argv[2];
 	char* outputDirectoryPath = argv[3];
 
-	printf("inputDirectoryPath = %s\nkeyFilePath = %s\noutputDirectoryPath = %s\n",inputDirectoryPath,keyFilePath,outputDirectoryPath);
+	//printf("inputDirectoryPath = %s\nkeyFilePath = %s\noutputDirectoryPath = %s\n",inputDirectoryPath,keyFilePath,outputDirectoryPath);
 
 	/*try to open the input directory stream*/
 	if ((inDirectory = opendir(inputDirectoryPath)) == NULL) {
@@ -59,9 +59,22 @@ int main(int argc, char** argv) {
 
 	/*try to open the output directory stream*/
 	if ((outDirectory = opendir(outputDirectoryPath)) == NULL) {
-		printf("Error opening directory: %s. %s\n", outputDirectoryPath,strerror(errno));
-		closedir(inDirectory);
-		return errno;
+
+		/*create a directory with the requested name*/
+		int makedirRes = mkdir(outputDirectoryPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		if (makedirRes < 0) {
+			printf("Error creating new directory directory: %s. %s\n", outputDirectoryPath,strerror(errno));
+			closedir(inDirectory);
+			return errno;
+		}
+
+		/*try to open the newly created directory*/
+		if ((outDirectory = opendir(outputDirectoryPath)) == NULL) {
+			printf("Error opening directory: %s. %s\n", outputDirectoryPath,strerror(errno));
+			closedir(inDirectory);
+			return errno;
+		}
+
 	}
 
 
@@ -71,15 +84,15 @@ int main(int argc, char** argv) {
 	while ( (directoryEntry = readdir(inDirectory)) != NULL) {
 
 		/*prepare output and input file path*/
-		sprintf(outFilePath,"%s%s" ,outputDirectoryPath,directoryEntry->d_name );
-		sprintf(inFilePath,"%s%s" ,inputDirectoryPath,directoryEntry->d_name );
+		sprintf(outFilePath,"%s/%s" ,outputDirectoryPath,directoryEntry->d_name );
+		sprintf(inFilePath,"%s/%s" ,inputDirectoryPath,directoryEntry->d_name );
 
 		/*make sure we are not reading a directory*/
 		if ((strcmp(directoryEntry->d_name, DIRECTORY) == 0) || (strcmp(directoryEntry->d_name, PARENTDIR) == 0) || (strcmp(directoryEntry->d_name, ".DS_Store") == 0) ) {
 			continue;
 		}
 
-		printf("currently working on the file %s\n",directoryEntry->d_name);
+		//printf("currently working on the file %s\n",directoryEntry->d_name);
 
 		/* open input file*/
 		inFileDescriptor = open(inFilePath, O_RDONLY);
@@ -152,7 +165,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		printf("key file was opened %d times\n", numOfTimesKeyFileWasOpen);
+		//printf("key file was opened %d times\n", numOfTimesKeyFileWasOpen);
 		close(outFileDescriptor);
 		close(inFileDescriptor);
 
